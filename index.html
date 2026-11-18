@@ -1,0 +1,3036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOKENVERSE - Tokenizer & Embedding Explorer</title>
+  <meta name="description" content="Explore how AI understands human language through interactive tokenization, numerical token IDs, embedding vectors, and real-time 3D vector space visualization.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Three.js & OrbitControls CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Chart.js CDN for 2D Scatter Plot -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ==========================================================================
+       CSS Variables & Reset
+       ========================================================================== */
+    :root {
+      --bg-main: #F8F9FE;
+      --bg-surface: #FFFFFF;
+      --bg-surface-trans: rgba(255, 255, 255, 0.85);
+      --bg-lavender: #F1F3FD;
+      --bg-lavender-subtle: #FAF7FE;
+      --bg-dark: #0B0F19;
+      --bg-dark-card: #131A2B;
+      --bg-dark-surface: #1E273E;
+
+      --text-main: #1E293B;
+      --text-secondary: #64748B;
+      --text-light: #94A3B8;
+      --text-white: #FFFFFF;
+
+      --primary: #6366F1;
+      --primary-hover: #4F46E5;
+      --primary-light: #EEF2FF;
+      --purple: #8B5CF6;
+      --purple-hover: #7C3AED;
+      --purple-light: #F5F3FF;
+      --cyan: #06B6D4;
+      --cyan-light: #ECFEFF;
+      --emerald: #10B981;
+      --emerald-light: #ECFDF5;
+      --amber: #F59E0B;
+      --amber-light: #FFFBEB;
+      --rose: #F43F5E;
+      --rose-light: #FFF1F2;
+
+      --border-color: #E2E8F0;
+      --border-subtle: #F1F5F9;
+      --border-dark: #26334D;
+
+      --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
+      --gradient-accent: linear-gradient(135deg, #3B82F6 0%, #6366F1 50%, #EC4899 100%);
+      --gradient-dark: linear-gradient(180deg, #0B0F19 0%, #0F172A 100%);
+      --gradient-card: linear-gradient(145deg, #FFFFFF 0%, #F8F9FE 100%);
+
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 25px -3px rgba(99, 102, 241, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 35px -5px rgba(99, 102, 241, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.35);
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --radius-pill: 9999px;
+
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.25s ease;
+      --transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button, input, textarea {
+      font-family: inherit;
+    }
+
+    /* Container Utility */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .container-wide {
+      width: 100%;
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Typography Utilities */
+    .gradient-text {
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-primary {
+      background: var(--primary-light);
+      color: var(--primary-hover);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .badge-purple {
+      background: var(--purple-light);
+      color: var(--purple-hover);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .badge-cyan {
+      background: var(--cyan-light);
+      color: #0891B2;
+      border: 1px solid rgba(6, 182, 212, 0.2);
+    }
+
+    .badge-dark {
+      background: rgba(255, 255, 255, 0.08);
+      color: #E2E8F0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 52px auto;
+    }
+
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-top: 12px;
+      margin-bottom: 14px;
+      line-height: 1.25;
+    }
+
+    .section-desc {
+      font-size: 1.0625rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Button Utilities */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--gradient-primary);
+      color: var(--text-white);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-lavender);
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-dark {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-white);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-dark:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 0.8125rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-icon {
+      padding: 10px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Card Utilities */
+    .card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      padding: 32px;
+      transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: rgba(99, 102, 241, 0.25);
+    }
+
+    /* ==========================================================================
+       Navigation Bar
+       ========================================================================== */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      transition: all var(--transition-normal);
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+    }
+
+    .brand-icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-white);
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+    }
+
+    .brand-badge {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: var(--primary-light);
+      color: var(--primary);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-left: 2px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-link {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: color var(--transition-fast);
+      position: relative;
+      padding: 6px 0;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: var(--primary);
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: width var(--transition-normal);
+    }
+
+    .nav-link:hover::after, .nav-link.active::after {
+      width: 100%;
+    }
+
+    .nav-cta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-main);
+      padding: 8px;
+    }
+
+    /* ==========================================================================
+       Hero Section
+       ========================================================================== */
+    .hero-section {
+      position: relative;
+      padding: 80px 0 100px 0;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 10%, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.04) 40%, transparent 70%);
+    }
+
+    .hero-content {
+      text-align: center;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      margin-top: 18px;
+      margin-bottom: 22px;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin: 0 auto 36px auto;
+      line-height: 1.6;
+    }
+
+    .hero-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+
+    /* Pipeline Visualization in Hero */
+    .pipeline-wrapper {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 36px 24px;
+      box-shadow: var(--shadow-lg);
+      margin-top: 20px;
+      position: relative;
+    }
+
+    .pipeline-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .pipeline-header h4 {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pipeline-flow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      position: relative;
+    }
+
+    .pipeline-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 18px 12px;
+      background: var(--bg-lavender);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(99, 102, 241, 0.12);
+      transition: all var(--transition-normal);
+      cursor: pointer;
+    }
+
+    .pipeline-step:hover {
+      background: #FFFFFF;
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+
+    .pipeline-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pipeline-step-title {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 4px;
+    }
+
+    .pipeline-step-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .pipeline-arrow {
+      color: var(--primary);
+      opacity: 0.5;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Small interactive hero preview widget */
+    .hero-demo-card {
+      margin-top: 28px;
+      padding: 16px 20px;
+      background: var(--bg-lavender-subtle);
+      border: 1px dashed rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 0.875rem;
+    }
+
+    .hero-demo-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .demo-pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* ==========================================================================
+       Tokenizer Playground Section
+       ========================================================================== */
+    .section-padding {
+      padding: 90px 0;
+    }
+
+    .playground-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    .input-workspace-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .workspace-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: #FAFBFF;
+    }
+
+    .sample-pill-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sample-pill {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-pill);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sample-pill:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .textarea-wrapper {
+      position: relative;
+      padding: 24px 28px 16px 28px;
+    }
+
+    .main-textarea {
+      width: 100%;
+      min-height: 140px;
+      font-size: 1.125rem;
+      line-height: 1.7;
+      color: var(--text-main);
+      border: none;
+      outline: none;
+      resize: vertical;
+      background: transparent;
+    }
+
+    .main-textarea::placeholder {
+      color: var(--text-light);
+    }
+
+    .workspace-footer {
+      padding: 16px 28px 24px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-top: 1px solid var(--border-subtle);
+      background: #FAFBFF;
+    }
+
+    .stats-counters {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .stat-val {
+      font-weight: 700;
+      font-size: 1.125rem;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+    }
+
+    .action-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Token Visual Display Area */
+    .token-display-box {
+      margin-top: 32px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      padding: 32px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .token-display-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .token-disclaimer {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      background: var(--amber-light);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #92400E;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .token-chips-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 24px;
+      background: var(--bg-lavender);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(99, 102, 241, 0.1);
+      min-height: 120px;
+      align-content: flex-start;
+    }
+
+    .token-chip {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg-surface);
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      user-select: none;
+      transition: all var(--transition-fast);
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .token-chip:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.18);
+      border-color: var(--primary);
+    }
+
+    .token-chip.selected {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary), 0 4px 12px rgba(99, 102, 241, 0.25);
+      transform: translateY(-3px);
+    }
+
+    .token-chip-text {
+      font-weight: 700;
+      font-size: 0.9375rem;
+      color: var(--text-main);
+      margin-bottom: 2px;
+      font-family: var(--font-mono);
+      white-space: pre;
+    }
+
+    .token-chip-meta {
+      font-size: 0.6875rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .token-chip-id {
+      font-family: var(--font-mono);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: var(--text-light);
+      width: 100%;
+      text-align: center;
+      gap: 12px;
+    }
+
+    /* ==========================================================================
+       Token ID Mapping Section
+       ========================================================================== */
+    .table-container {
+      background: var(--bg-surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .table-top-bar {
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      background: #FAFBFF;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .table-responsive {
+      max-height: 440px;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: #F8FAFC;
+      padding: 14px 20px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .data-table td {
+      padding: 14px 20px;
+      font-size: 0.9375rem;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background var(--transition-fast);
+    }
+
+    .data-table tr:hover td {
+      background: var(--bg-lavender-subtle);
+    }
+
+    .data-table tr.highlighted td {
+      background: var(--primary-light);
+      color: var(--primary-hover);
+      font-weight: 600;
+    }
+
+    .token-text-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      font-weight: 600;
+      background: var(--bg-lavender);
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      color: var(--primary-hover);
+    }
+
+    .token-id-num {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--purple-hover);
+      background: var(--purple-light);
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .table-info-box {
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      color: #1E40AF;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    /* ==========================================================================
+       Embedding Explorer Section
+       ========================================================================== */
+    .embedding-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .embedding-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-normal);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .embedding-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+
+    .embedding-card.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary), var(--shadow-md);
+      background: #FAF8FF;
+    }
+
+    .embedding-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .embedding-vector-preview {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      background: var(--bg-lavender);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      margin-bottom: 14px;
+      word-break: break-all;
+    }
+
+    .vector-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .dim-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .dim-label {
+      width: 42px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .dim-bar-track {
+      flex: 1;
+      height: 7px;
+      background: #E2E8F0;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .dim-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .dim-val {
+      width: 38px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       Interactive 3D Embedding Workspace Section (Dark Space Highlight)
+       ========================================================================== */
+    .workspace-3d-wrapper {
+      background: var(--bg-dark);
+      color: var(--text-white);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-xl), 0 0 50px rgba(11, 15, 25, 0.8);
+      border: 1px solid var(--border-dark);
+      position: relative;
+    }
+
+    .workspace-3d-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      background: rgba(19, 26, 43, 0.85);
+      border-bottom: 1px solid var(--border-dark);
+      backdrop-filter: blur(8px);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .workspace-3d-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .workspace-3d-title-group h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-white);
+      letter-spacing: -0.01em;
+    }
+
+    .workspace-controls-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* 3D Canvas Container */
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      background: radial-gradient(circle at center, #10172A 0%, #080C16 100%);
+      overflow: hidden;
+      cursor: grab;
+    }
+
+    .canvas-container:active {
+      cursor: grabbing;
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Floating HUD Inside 3D Canvas */
+    .canvas-hud-overlay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .hud-instruction-badge {
+      pointer-events: auto;
+      background: rgba(19, 26, 43, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.8125rem;
+      color: #CBD5E1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Selected Token Inspector Card floating on top-right */
+    .inspector-card {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 310px;
+      background: rgba(19, 26, 43, 0.92);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      color: var(--text-white);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.2);
+      z-index: 10;
+      transition: all var(--transition-normal);
+      display: none;
+    }
+
+    .inspector-card.active {
+      display: block;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .inspector-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .inspector-badge-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .inspector-token-title {
+      font-size: 1.375rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      font-family: var(--font-mono);
+      margin-bottom: 8px;
+    }
+
+    .inspector-coords-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .coord-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .coord-tag {
+      font-size: 0.6875rem;
+      color: #94A3B8;
+      font-weight: 700;
+    }
+
+    .coord-val {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: #38BDF8;
+    }
+
+    .inspector-vector-box {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      color: #A5B4FC;
+      border-left: 3px solid var(--primary);
+    }
+
+    .close-inspector-btn {
+      background: none;
+      border: none;
+      color: #94A3B8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+
+    .close-inspector-btn:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* 3D Explanatory Footer Bar */
+    .workspace-3d-footer {
+      padding: 24px 28px;
+      background: #0E1424;
+      border-top: 1px solid var(--border-dark);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .explainer-title {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: #E2E8F0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .explainer-text {
+      font-size: 0.84375rem;
+      color: #94A3B8;
+      line-height: 1.55;
+    }
+
+    /* ==========================================================================
+       2D Embedding Visualization Section
+       ========================================================================== */
+    .chart-container-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-md);
+      padding: 28px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 380px;
+      width: 100%;
+    }
+
+    /* ==========================================================================
+       How It Works / Educational Cards Section
+       ========================================================================== */
+    .educational-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-top: 36px;
+    }
+
+    .edu-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-normal);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .edu-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .edu-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .edu-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .edu-card p {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+
+    .edu-example-box {
+      background: var(--bg-lavender);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 0.8125rem;
+      border-left: 3px solid var(--primary);
+      color: var(--text-main);
+    }
+
+    .edu-example-box strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--primary-hover);
+      text-transform: uppercase;
+      font-size: 0.71875rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Full Workflow Card */
+    .workflow-strip-card {
+      margin-top: 36px;
+      background: var(--gradient-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+
+    .workflow-strip-card h3 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 24px;
+    }
+
+    .workflow-steps-horizontal {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .wf-node {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 0.9375rem;
+      box-shadow: var(--shadow-sm);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wf-arrow {
+      color: var(--primary);
+      font-weight: 900;
+    }
+
+    /* ==========================================================================
+       Footer Section
+       ========================================================================== */
+    .footer {
+      background: #FFFFFF;
+      border-top: 1px solid var(--border-color);
+      padding: 60px 0 36px 0;
+      margin-top: 80px;
+    }
+
+    .footer-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 24px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .footer-motto {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .footer-tagline {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .footer-sub {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 24px;
+      font-size: 0.8125rem;
+      color: var(--text-light);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* ==========================================================================
+       Responsive Media Queries
+       ========================================================================== */
+    @media (max-width: 992px) {
+      .hero-title {
+        font-size: 2.75rem;
+      }
+      .pipeline-flow {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .pipeline-arrow {
+        transform: rotate(90deg);
+        margin: 4px 0;
+      }
+      .workspace-3d-footer {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 72px;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.98);
+        padding: 24px;
+        box-shadow: var(--shadow-lg);
+        border-bottom: 1px solid var(--border-color);
+        gap: 16px;
+      }
+      .nav-links.mobile-open {
+        display: flex;
+      }
+      .mobile-menu-btn {
+        display: block;
+      }
+      .hero-title {
+        font-size: 2.25rem;
+      }
+      .hero-buttons {
+        flex-direction: column;
+      }
+      .canvas-container {
+        height: 460px;
+      }
+      .inspector-card {
+        width: calc(100% - 40px);
+        right: 20px;
+      }
+      .section-title {
+        font-size: 1.875rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       Navigation Bar
+       ========================================================================== -->
+  <nav class="navbar" id="navbar">
+    <div class="container-wide nav-container">
+      <a href="#home" class="brand-logo">
+        <div class="brand-icon-box">
+          <i data-lucide="boxes" style="width: 22px; height: 22px;"></i>
+        </div>
+        <span>TOKEN<span class="gradient-text">VERSE</span></span>
+        <span class="brand-badge">AI Lab</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#home" class="nav-link active">Home</a></li>
+        <li><a href="#tokenizer" class="nav-link">Tokenizer</a></li>
+        <li><a href="#token-ids" class="nav-link">Token IDs</a></li>
+        <li><a href="#embeddings" class="nav-link">Embeddings</a></li>
+        <li><a href="#workspace3d" class="nav-link">3D Workspace</a></li>
+        <li><a href="#plot2d" class="nav-link">2D Space</a></li>
+        <li><a href="#how-it-works" class="nav-link">About & Concepts</a></li>
+      </ul>
+
+      <div class="nav-cta">
+        <a href="#tokenizer" class="btn btn-primary btn-sm">
+          <i data-lucide="sparkles" style="width: 15px; height: 15px;"></i>
+          <span>Start Exploring</span>
+        </a>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation">
+          <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==========================================================================
+       Hero Section
+       ========================================================================== -->
+  <header class="hero-section" id="home">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge badge-primary">
+          <i data-lucide="cpu" style="width: 14px; height: 14px;"></i>
+          First-Year Science & AI Interactive Project
+        </span>
+
+        <h1 class="hero-title">
+          Explore How AI Understands <br>
+          <span class="gradient-text">Your Text</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Discover how human language transforms into tokens, numerical IDs and embedding vectors inside multidimensional vector spaces.
+        </p>
+
+        <div class="hero-buttons">
+          <a href="#tokenizer" class="btn btn-primary">
+            <i data-lucide="terminal" style="width: 18px; height: 18px;"></i>
+            <span>Start Exploring</span>
+          </a>
+          <a href="#workspace3d" class="btn btn-secondary">
+            <i data-lucide="box" style="width: 18px; height: 18px;"></i>
+            <span>Explore 3D Space</span>
+          </a>
+        </div>
+
+        <!-- Interactive AI Pipeline Illustration -->
+        <div class="pipeline-wrapper">
+          <div class="pipeline-header">
+            <h4>
+              <i data-lucide="git-commit" style="width: 18px; height: 18px; color: var(--primary);"></i>
+              The Natural Language Processing (NLP) Pipeline
+            </h4>
+            <span class="badge badge-purple">End-to-End Architecture</span>
+          </div>
+
+          <div class="pipeline-flow">
+            <!-- Step 1 -->
+            <div class="pipeline-step" onclick="scrollToSection('tokenizer')">
+              <div class="pipeline-icon">
+                <i data-lucide="file-text" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div class="pipeline-step-title">1. Input Text</div>
+              <div class="pipeline-step-desc">"AI is smart"</div>
+            </div>
+
+            <div class="pipeline-arrow"><i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i></div>
+
+            <!-- Step 2 -->
+            <div class="pipeline-step" onclick="scrollToSection('tokenizer')">
+              <div class="pipeline-icon" style="color: var(--purple);">
+                <i data-lucide="scissors" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div class="pipeline-step-title">2. Tokenization</div>
+              <div class="pipeline-step-desc">["AI", "is", "smart"]</div>
+            </div>
+
+            <div class="pipeline-arrow"><i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i></div>
+
+            <!-- Step 3 -->
+            <div class="pipeline-step" onclick="scrollToSection('token-ids')">
+              <div class="pipeline-icon" style="color: var(--cyan);">
+                <i data-lucide="hash" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div class="pipeline-step-title">3. Token IDs</div>
+              <div class="pipeline-step-desc">[104, 219, 482]</div>
+            </div>
+
+            <div class="pipeline-arrow"><i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i></div>
+
+            <!-- Step 4 -->
+            <div class="pipeline-step" onclick="scrollToSection('embeddings')">
+              <div class="pipeline-icon" style="color: var(--amber);">
+                <i data-lucide="binary" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div class="pipeline-step-title">4. Embedding Vectors</div>
+              <div class="pipeline-step-desc">[0.45, -0.22, 0.81]</div>
+            </div>
+
+            <div class="pipeline-arrow"><i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i></div>
+
+            <!-- Step 5 -->
+            <div class="pipeline-step" onclick="scrollToSection('workspace3d')">
+              <div class="pipeline-icon" style="color: var(--rose);">
+                <i data-lucide="orbit" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div class="pipeline-step-title">5. 3D Vector Space</div>
+              <div class="pipeline-step-desc">(X, Y, Z coordinates)</div>
+            </div>
+          </div>
+
+          <!-- Small animated text-to-token demonstration widget -->
+          <div class="hero-demo-card">
+            <div class="hero-demo-left">
+              <div class="demo-pulse-dot"></div>
+              <div>
+                <strong>Live Demonstration Flow:</strong>
+                <span id="hero-typewriter-text" style="color: var(--primary); font-family: var(--font-mono); margin-left: 6px;">"Language models understand numbers, not words."</span>
+              </div>
+            </div>
+            <div id="hero-token-pills" style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <!-- Generated tokens preview -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       Tokenizer Playground Section
+       ========================================================================== -->
+  <section class="section-padding" id="tokenizer">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-primary">Interactive Workspace</span>
+        <h2 class="section-title">Tokenizer Playground</h2>
+        <p class="section-desc">
+          Enter any sentence or select a sample. Watch how words and punctuation are split into discrete tokens, assigned unique numerical IDs, and prepared for neural embeddings.
+        </p>
+      </div>
+
+      <div class="playground-grid">
+        <!-- Input Card -->
+        <div class="input-workspace-card">
+          <div class="workspace-header">
+            <span style="font-weight: 700; font-size: 0.875rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="message-square" style="width: 16px; height: 16px;"></i>
+              Predefined Samples:
+            </span>
+            <div class="sample-pill-group">
+              <button class="sample-pill" onclick="loadSample(1)">
+                <i data-lucide="bookmark" style="width: 13px; height: 13px;"></i>
+                Sample 1: AI & Multidimensional Space
+              </button>
+              <button class="sample-pill" onclick="loadSample(2)">
+                <i data-lucide="bookmark" style="width: 13px; height: 13px;"></i>
+                Sample 2: The Quick Brown Fox
+              </button>
+              <button class="sample-pill" onclick="loadSample(3)">
+                <i data-lucide="bookmark" style="width: 13px; height: 13px;"></i>
+                Sample 3: Attention Is All You Need
+              </button>
+            </div>
+          </div>
+
+          <div class="textarea-wrapper">
+            <textarea id="user-input-text" class="main-textarea" rows="4" placeholder="Type or paste your text here to tokenize and explore... (e.g., Artificial intelligence transforms words into vectors in multidimensional space.)" oninput="updateLiveCounters()"></textarea>
+          </div>
+
+          <div class="workspace-footer">
+            <div class="stats-counters">
+              <div class="stat-badge">
+                <span>Characters:</span>
+                <span class="stat-val" id="char-count">0</span>
+              </div>
+              <div class="stat-badge">
+                <span>Words:</span>
+                <span class="stat-val" id="word-count">0</span>
+              </div>
+              <div class="stat-badge">
+                <span>Tokens:</span>
+                <span class="stat-val" style="color: var(--primary);" id="token-count">0</span>
+              </div>
+            </div>
+
+            <div class="action-btn-group">
+              <button class="btn btn-secondary btn-sm" onclick="clearPlayground()">
+                <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+                <span>Clear</span>
+              </button>
+              <button class="btn btn-primary" onclick="tokenizeAndRun()">
+                <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+                <span>Tokenize Text</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Token Output Display -->
+        <div class="token-display-box">
+          <div class="token-display-header">
+            <div>
+              <h3 style="font-size: 1.25rem; font-weight: 700;">Generated Tokens Flow</h3>
+              <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 2px;">
+                Click any individual token to highlight it across the Token ID table, Embedding cards, and 3D Vector Space!
+              </p>
+            </div>
+
+            <div class="token-disclaimer">
+              <i data-lucide="info" style="width: 15px; height: 15px;"></i>
+              Simplified educational tokenizer (demonstrating word & punctuation splitting)
+            </div>
+          </div>
+
+          <!-- Tokens Container -->
+          <div class="token-chips-flow" id="token-chips-container">
+            <div class="empty-state">
+              <i data-lucide="terminal" style="width: 32px; height: 32px;"></i>
+              <p>Enter text above and click <strong>"Tokenize Text"</strong> to generate tokens.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Token ID Mapping Section
+       ========================================================================== */
+  ========================================================================== -->
+  <section class="section-padding" id="token-ids" style="background: var(--bg-lavender-subtle);">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-purple">Vocabulary Lookup</span>
+        <h2 class="section-title">Token ID Mapping</h2>
+        <p class="section-desc">
+          Computers cannot process letters or words directly. Each distinct token is assigned a deterministic numerical ID in the vocabulary dictionary.
+        </p>
+      </div>
+
+      <div class="table-container">
+        <div class="table-top-bar">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i data-lucide="table" style="color: var(--primary);"></i>
+            <span style="font-weight: 700; font-size: 1rem;">Vocabulary Dictionary Index</span>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <span class="badge badge-primary" id="vocab-unique-badge">0 Unique Tokens</span>
+            <span class="badge badge-cyan" id="vocab-total-badge">0 Total Tokens</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table" id="token-id-table">
+            <thead>
+              <tr>
+                <th>Index #</th>
+                <th>Token</th>
+                <th>Token ID</th>
+                <th>Token Type</th>
+                <th>Occurrences</th>
+                <th>Deterministic Consistency</th>
+              </tr>
+            </thead>
+            <tbody id="token-table-body">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-light); padding: 32px;">
+                  No token data available yet. Please tokenize some text first.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-info-box">
+        <i data-lucide="lightbulb" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;"></i>
+        <div>
+          <strong>Consistency Rule in Action:</strong>
+          Notice that whenever a word or punctuation appears multiple times (e.g., "the", "in", or "."), it receives the <em>exact same Token ID</em>. This deterministic mapping allows the neural network to preserve consistent semantics across any sentence.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Embedding Explorer Section
+       ========================================================================== -->
+  <section class="section-padding" id="embeddings">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-cyan">Numerical Representation</span>
+        <h2 class="section-title">Embedding Vector Explorer</h2>
+        <p class="section-desc">
+          How do numerical IDs become meaningful concepts? Neural networks map each Token ID into a continuous multi-dimensional vector representing syntactic and semantic features.
+        </p>
+      </div>
+
+      <!-- Educational Explanation Banner -->
+      <div class="card" style="margin-bottom: 28px; background: #FFFFFF; border-left: 4px solid var(--primary);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
+          <div>
+            <h4 style="font-size: 0.9375rem; font-weight: 700; color: var(--primary); margin-bottom: 4px;">Dimension 1 (X)</h4>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary);">Lexical complexity, word length, & character density balance.</p>
+          </div>
+          <div>
+            <h4 style="font-size: 0.9375rem; font-weight: 700; color: var(--purple); margin-bottom: 4px;">Dimension 2 (Y)</h4>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary);">Syntactic role heuristic (capitalization, punctuation, grammatical endings).</p>
+          </div>
+          <div>
+            <h4 style="font-size: 0.9375rem; font-weight: 700; color: var(--cyan); margin-bottom: 4px;">Dimension 3 (Z)</h4>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary);">Harmonic character frequency spectrum & phonetic structure.</p>
+          </div>
+          <div>
+            <h4 style="font-size: 0.9375rem; font-weight: 700; color: var(--amber); margin-bottom: 4px;">Dimension 4 (W)</h4>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary);">Latent context weight and semantic uniqueness index.</p>
+          </div>
+        </div>
+        <div style="margin-top: 14px; font-size: 0.75rem; color: var(--text-light); border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+          * Note: Educational demo embeddings are 4-dimensional normalized vectors generated deterministically. Real LLMs use 1,536 to 4,096 dimensions.
+        </div>
+      </div>
+
+      <!-- Embedding Cards Grid -->
+      <div class="embedding-cards-grid" id="embedding-cards-container">
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          <i data-lucide="layers" style="width: 32px; height: 32px;"></i>
+          <p>Tokenize text to generate and inspect educational embedding vectors.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Interactive 3D Embedding Workspace (Highlight Feature)
+       ========================================================================== -->
+  <section class="section-padding" id="workspace3d" style="background: #060911;">
+    <div class="container-wide">
+      <div class="section-header" style="color: #FFFFFF;">
+        <span class="badge badge-dark" style="color: #A5B4FC; border-color: rgba(99, 102, 241, 0.4);">
+          <i data-lucide="box" style="width: 14px; height: 14px;"></i>
+          Special Feature Highlight
+        </span>
+        <h2 class="section-title" style="color: #FFFFFF;">Interactive 3D Embedding Workspace</h2>
+        <p class="section-desc" style="color: #94A3B8;">
+          Watch your tokens manifest inside a 3D vector space! Rotate, zoom, pan, and click on any point to inspect its exact spatial coordinates derived directly from its embedding vector.
+        </p>
+      </div>
+
+      <div class="workspace-3d-wrapper">
+        <!-- Top Bar -->
+        <div class="workspace-3d-topbar">
+          <div class="workspace-3d-title-group">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #38BDF8; box-shadow: 0 0 10px #38BDF8;"></div>
+            <h3>3D Vector Space (Three.js Engine)</h3>
+            <span class="badge badge-dark" id="space-token-count-badge">0 Points Plotted</span>
+          </div>
+
+          <div class="workspace-controls-group">
+            <button class="btn btn-dark btn-sm" id="btn-auto-rotate" onclick="toggleAutoRotate()">
+              <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+              <span id="rotate-btn-text">Pause Rotation</span>
+            </button>
+            <button class="btn btn-dark btn-sm" onclick="reset3DCamera()">
+              <i data-lucide="compass" style="width: 14px; height: 14px;"></i>
+              <span>Reset Camera</span>
+            </button>
+            <button class="btn btn-dark btn-sm" onclick="clear3DSpace()" style="color: #F87171;">
+              <i data-lucide="eraser" style="width: 14px; height: 14px;"></i>
+              <span>Clear Space</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3D Canvas Area -->
+        <div class="canvas-container" id="canvas-container">
+          <div id="three-canvas"></div>
+
+          <!-- Canvas HUD Overlays -->
+          <div class="canvas-hud-overlay">
+            <div class="hud-instruction-badge">
+              <i data-lucide="mouse-pointer" style="width: 14px; height: 14px; color: #38BDF8;"></i>
+              <span><strong>Controls:</strong> Left-Click + Drag: Rotate | Scroll: Zoom | Right-Click + Drag: Pan | Click Point: Inspect</span>
+            </div>
+          </div>
+
+          <!-- Floating Inspector Card -->
+          <div class="inspector-card" id="inspector-card">
+            <div class="inspector-header">
+              <span class="badge badge-dark" id="inspector-type-badge">Token Info</span>
+              <button class="close-inspector-btn" onclick="closeInspector()">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+            <div class="inspector-token-title" id="inspector-token-name">Token</div>
+            <div style="font-size: 0.8125rem; color: #94A3B8; margin-bottom: 8px;">
+              Vocabulary Token ID: <strong style="color: #A5B4FC;" id="inspector-token-id">#000</strong>
+            </div>
+
+            <div class="inspector-coords-grid">
+              <div class="coord-item">
+                <span class="coord-tag">X (Dim 1)</span>
+                <span class="coord-val" id="inspector-coord-x">0.00</span>
+              </div>
+              <div class="coord-item">
+                <span class="coord-tag">Y (Dim 2)</span>
+                <span class="coord-val" id="inspector-coord-y">0.00</span>
+              </div>
+              <div class="coord-item">
+                <span class="coord-tag">Z (Dim 3)</span>
+                <span class="coord-val" id="inspector-coord-z">0.00</span>
+              </div>
+            </div>
+
+            <div style="font-size: 0.75rem; color: #94A3B8; margin-bottom: 4px;">4D Demo Vector:</div>
+            <div class="inspector-vector-box" id="inspector-vector-text">[0.00, 0.00, 0.00, 0.00]</div>
+          </div>
+
+        </div>
+
+        <!-- Explanatory Footer -->
+        <div class="workspace-3d-footer">
+          <div>
+            <div class="explainer-title">
+              <i data-lucide="help-circle" style="width: 18px; height: 18px; color: #38BDF8;"></i>
+              What am I seeing in this 3D space?
+            </div>
+            <p class="explainer-text">
+              Every floating node represents a token from your text. The 3D coordinates (X, Y, Z) are mathematically mapped from the token's educational embedding vector (Dimension 1 as X, Dimension 2 as Y, Dimension 3 as Z). The glowing coordinate grid lines demonstrate spatial separation.
+            </p>
+          </div>
+          <div>
+            <div class="explainer-title">
+              <i data-lucide="sparkles" style="width: 18px; height: 18px; color: #C084FC;"></i>
+              Why do Vectors matter for AI?
+            </div>
+            <p class="explainer-text">
+              In modern Large Language Models (LLMs), tokens that share similar contexts or grammatical roles gravitate towards nearby regions in vector space. Geometry allows neural networks to perform semantic reasoning via vector algebra!
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       2D Embedding Visualization Section (Chart.js)
+       ========================================================================== -->
+  <section class="section-padding" id="plot2d">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-purple">Planar Projection</span>
+        <h2 class="section-title">2D Embedding Scatter Plot</h2>
+        <p class="section-desc">
+          Compare tokens along Dimension 1 (X) vs Dimension 2 (Y). Hover over data points to see their exact coordinates, token names, and IDs.
+        </p>
+      </div>
+
+      <div class="chart-container-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="font-size: 1.125rem; font-weight: 700;">Dimension 1 vs Dimension 2 Projection</h3>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary);">Interactive 2D Chart rendered via Chart.js</p>
+          </div>
+          <span class="badge badge-primary">Synchronized with User Text</span>
+        </div>
+
+        <div class="chart-wrapper">
+          <canvas id="scatterChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       How It Works / Educational Concepts Section
+       ========================================================================== -->
+  <section class="section-padding" id="how-it-works" style="background: var(--bg-lavender-subtle);">
+    <div class="container">
+      <div class="section-header">
+        <span class="badge badge-primary">Foundational Knowledge</span>
+        <h2 class="section-title">How AI Understands Language</h2>
+        <p class="section-desc">
+          A beginner-friendly guide to modern NLP concepts for first-year Science & Artificial Intelligence students.
+        </p>
+      </div>
+
+      <div class="educational-cards-grid">
+        <!-- Card 1 -->
+        <div class="edu-card">
+          <div class="edu-icon-box" style="background: var(--primary-light); color: var(--primary);">
+            <i data-lucide="scissors" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3>1. What is Tokenization?</h3>
+          <p>
+            Tokenization is the very first step in Natural Language Processing. It breaks continuous raw strings of human characters into smaller, standardized pieces called <strong>tokens</strong>.
+          </p>
+          <div class="edu-example-box">
+            <strong>Example:</strong>
+            "Learning AI is fun!" → ["Learning", "AI", "is", "fun", "!"]
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="edu-card">
+          <div class="edu-icon-box" style="background: var(--purple-light); color: var(--purple);">
+            <i data-lucide="component" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3>2. What are Tokens?</h3>
+          <p>
+            Tokens are the atomic units of text for a language model. They can be whole words, subwords, individual letters, or punctuation marks. Models predict the next token one piece at a time.
+          </p>
+          <div class="edu-example-box">
+            <strong>Key Concept:</strong>
+            Common words are single tokens, while rare words are broken into subwords (e.g., "unbreakable" → "un" + "break" + "able").
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="edu-card">
+          <div class="edu-icon-box" style="background: var(--cyan-light); color: #0891B2;">
+            <i data-lucide="hash" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3>3. What are Token IDs?</h3>
+          <p>
+            Computers cannot calculate words—they only do math on numbers. Every unique token in the model's fixed vocabulary dictionary is assigned an integer index called a <strong>Token ID</strong>.
+          </p>
+          <div class="edu-example-box">
+            <strong>Lookup Table:</strong>
+            "AI" → 104, "robot" → 3409. The exact same token always gets the same ID!
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="edu-card">
+          <div class="edu-icon-box" style="background: var(--amber-light); color: #D97706;">
+            <i data-lucide="binary" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3>4. What are Embeddings?</h3>
+          <p>
+            An embedding transforms a discrete, arbitrary Token ID into a dense list of real numbers (a vector). These numbers represent geometric positions that encode the token's meaning and syntax.
+          </p>
+          <div class="edu-example-box">
+            <strong>Vector representation:</strong>
+            "king" = [0.91, 0.32, -0.45], "queen" = [0.89, 0.35, 0.62]
+          </div>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="edu-card">
+          <div class="edu-icon-box" style="background: var(--emerald-light); color: #059669;">
+            <i data-lucide="compass" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3>5. Why does AI use Embeddings?</h3>
+          <p>
+            Embeddings enable vector arithmetic! In vector space, words with similar meanings cluster together. Neural networks use these coordinates to reason about context, analogies, and grammar.
+          </p>
+          <div class="edu-example-box">
+            <strong>Famous Equation:</strong>
+            Vector("King") - Vector("Man") + Vector("Woman") ≈ Vector("Queen")
+          </div>
+        </div>
+      </div>
+
+      <!-- Complete Pipeline Infographic Card -->
+      <div class="workflow-strip-card">
+        <h3>The Complete NLP Workflow</h3>
+        <div class="workflow-steps-horizontal">
+          <div class="wf-node">
+            <i data-lucide="user" style="color: var(--primary); width: 18px; height: 18px;"></i>
+            <span>Human Text</span>
+          </div>
+          <span class="wf-arrow">→</span>
+          <div class="wf-node">
+            <i data-lucide="scissors" style="color: var(--purple); width: 18px; height: 18px;"></i>
+            <span>Tokens</span>
+          </div>
+          <span class="wf-arrow">→</span>
+          <div class="wf-node">
+            <i data-lucide="hash" style="color: var(--cyan); width: 18px; height: 18px;"></i>
+            <span>Numerical IDs</span>
+          </div>
+          <span class="wf-arrow">→</span>
+          <div class="wf-node">
+            <i data-lucide="binary" style="color: var(--amber); width: 18px; height: 18px;"></i>
+            <span>Embedding Vectors</span>
+          </div>
+          <span class="wf-arrow">→</span>
+          <div class="wf-node">
+            <i data-lucide="orbit" style="color: var(--rose); width: 18px; height: 18px;"></i>
+            <span>Vector Space</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       Footer Section
+       ========================================================================== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="brand-logo">
+            <div class="brand-icon-box">
+              <i data-lucide="boxes" style="width: 20px; height: 20px;"></i>
+            </div>
+            <span>TOKEN<span class="gradient-text">VERSE</span></span>
+          </div>
+          <p class="footer-motto">Tokenizer & Embedding Explorer</p>
+          <p style="font-size: 0.8125rem; color: var(--text-light); margin-top: 4px;">
+            Science & AI College Project | Interactive NLP Learning Lab
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-tagline">"Learn. Tokenize. Visualize."</div>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 6px;">
+            Built with pure HTML5, CSS3, Vanilla JavaScript, Three.js & Chart.js.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-sub">
+        <span>© 2026 TOKENVERSE • Educational Open Project</span>
+        <a href="#home" style="display: flex; align-items: center; gap: 4px; color: var(--primary); font-weight: 600;">
+          Back to Top <i data-lucide="arrow-up" style="width: 14px; height: 14px;"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       JavaScript Implementation
+       ========================================================================== -->
+  <script>
+    /* ==========================================================================
+       Global State & Vocabulary Management
+       ========================================================================== */
+    const State = {
+      rawText: "",
+      tokens: [],          // Array of token objects: { text, id, type, index, vector: [d1, d2, d3, d4] }
+      vocabMap: new Map(), // Map of token string -> unique integer ID
+      selectedTokenIndex: null,
+      autoRotate: true,
+    };
+
+    // Predefined Samples
+    const SAMPLES = {
+      1: "Artificial intelligence transforms words into vectors in multidimensional space.",
+      2: "The quick brown fox jumps over the lazy dog. AI is fascinating!",
+      3: "Attention is all you need. Neural networks understand patterns, not raw words."
+    };
+
+    /* ==========================================================================
+       Deterministic Hash & Educational Embedding Vector Generator
+       ========================================================================== */
+    // Deterministic string hash function (djb2 variant)
+    function hashString(str) {
+      let hash = 5381;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) + str.charCodeAt(i);
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return Math.abs(hash);
+    }
+
+    // Determine token type for educational labeling
+    function getTokenType(tokenStr) {
+      if (/^[.,!?;:'"()[\]{}—–…\-\/]+$/.test(tokenStr)) {
+        return "Punctuation";
+      } else if (/^\d+$/.test(tokenStr)) {
+        return "Number";
+      } else if (/^[A-Z][a-zA-Z]*$/.test(tokenStr)) {
+        return "Entity / Proper";
+      } else {
+        return "Word";
+      }
+    }
+
+    // Assign deterministic Token ID based on vocabulary dictionary
+    function getDeterministicTokenId(tokenStr) {
+      const normalizedKey = tokenStr.toLowerCase();
+      if (!State.vocabMap.has(normalizedKey)) {
+        // Base starting ID for educational realism (like 1000 + hash modulus)
+        const id = 1000 + (hashString(normalizedKey) % 8999);
+        State.vocabMap.set(normalizedKey, id);
+      }
+      return State.vocabMap.get(normalizedKey);
+    }
+
+    // Generate deterministic 4D educational embedding vector
+    function generateEducationalEmbedding(tokenStr, tokenId) {
+      const len = tokenStr.length;
+      const lower = tokenStr.toLowerCase();
+      const vowels = (lower.match(/[aeiou]/g) || []).length;
+      const h1 = hashString(tokenStr + "_d1");
+      const h2 = hashString(tokenStr + "_d2");
+      const h3 = hashString(tokenStr + "_d3");
+      const h4 = hashString(tokenStr + "_d4");
+
+      // Dim 1 (X): Word length & complexity balance (-1.0 to 1.0)
+      const d1 = Number((Math.sin(len * 1.3 + (h1 % 100) * 0.05) * 0.85).toFixed(2));
+
+      // Dim 2 (Y): Syntactic heuristic / Vowel-consonant density (-1.0 to 1.0)
+      const d2 = Number((Math.cos(vowels * 1.7 + (h2 % 100) * 0.05) * 0.85).toFixed(2));
+
+      // Dim 3 (Z): Harmonic frequency spectrum (-1.0 to 1.0)
+      const d3 = Number((Math.sin((tokenId % 360) * (Math.PI / 180) + (h3 % 50) * 0.1) * 0.85).toFixed(2));
+
+      // Dim 4 (W): Latent contextual dimension (-1.0 to 1.0)
+      const d4 = Number((Math.cos((h4 % 100) * 0.1) * 0.85).toFixed(2));
+
+      return [d1, d2, d3, d4];
+    }
+
+    /* ==========================================================================
+       Educational Tokenizer Engine
+       Splits words, contractions, and punctuation cleanly
+       ========================================================================== */
+    function educationalTokenize(inputText) {
+      if (!inputText || !inputText.trim()) return [];
+
+      // Regex that matches words, contractions (e.g. don't), numbers, and individual punctuation marks
+      const tokenRegex = /[\w]+(?:['’][\w]+)?|[.,!?;:'"()[\]{}—–…\-\/]/g;
+      const matches = inputText.match(tokenRegex) || [];
+
+      return matches.map((tokenText, idx) => {
+        const tokenId = getDeterministicTokenId(tokenText);
+        const tokenType = getTokenType(tokenText);
+        const vector = generateEducationalEmbedding(tokenText, tokenId);
+
+        return {
+          index: idx,
+          text: tokenText,
+          id: tokenId,
+          type: tokenType,
+          vector: vector,
+        };
+      });
+    }
+
+    /* ==========================================================================
+       UI Updates & Synchronization Across All Sections
+       ========================================================================== */
+    function tokenizeAndRun() {
+      const inputEl = document.getElementById("user-input-text");
+      const text = inputEl.value;
+
+      if (!text.trim()) {
+        alert("Please enter some text or select one of the predefined samples.");
+        return;
+      }
+
+      State.rawText = text;
+      State.tokens = educationalTokenize(text);
+      State.selectedTokenIndex = null;
+
+      // Update counters
+      updateLiveCounters();
+
+      // Render Token Chips in Playground
+      renderTokenChips();
+
+      // Render Token ID Table
+      renderTokenIdTable();
+
+      // Render Embedding Cards
+      renderEmbeddingCards();
+
+      // Update 3D Three.js Vector Space
+      update3DVisualization();
+
+      // Update 2D Chart.js Scatter Plot
+      update2DChart();
+    }
+
+    function updateLiveCounters() {
+      const text = document.getElementById("user-input-text").value;
+      const chars = text.length;
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const tokensCount = State.tokens.length;
+
+      document.getElementById("char-count").textContent = chars;
+      document.getElementById("word-count").textContent = words;
+      document.getElementById("token-count").textContent = tokensCount;
+    }
+
+    function loadSample(sampleNumber) {
+      const text = SAMPLES[sampleNumber];
+      if (text) {
+        document.getElementById("user-input-text").value = text;
+        tokenizeAndRun();
+      }
+    }
+
+    function clearPlayground() {
+      document.getElementById("user-input-text").value = "";
+      State.rawText = "";
+      State.tokens = [];
+      State.selectedTokenIndex = null;
+
+      updateLiveCounters();
+      renderTokenChips();
+      renderTokenIdTable();
+      renderEmbeddingCards();
+      clear3DSpace();
+      update2DChart();
+      closeInspector();
+    }
+
+    /* ==========================================================================
+       Section 5: Render Token Chips
+       ========================================================================== */
+    function renderTokenChips() {
+      const container = document.getElementById("token-chips-container");
+      container.innerHTML = "";
+
+      if (State.tokens.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i data-lucide="terminal" style="width: 32px; height: 32px;"></i>
+            <p>Enter text above and click <strong>"Tokenize Text"</strong> to generate tokens.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      State.tokens.forEach((t) => {
+        const chip = document.createElement("div");
+        chip.className = `token-chip ${State.selectedTokenIndex === t.index ? "selected" : ""}`;
+        chip.id = `chip-token-${t.index}`;
+
+        // Badge color by token type
+        let badgeColor = "#6366F1";
+        if (t.type === "Punctuation") badgeColor = "#F59E0B";
+        else if (t.type === "Number") badgeColor = "#10B981";
+        else if (t.type === "Entity / Proper") badgeColor = "#06B6D4";
+
+        chip.innerHTML = `
+          <div class="token-chip-text">${escapeHtml(t.text)}</div>
+          <div class="token-chip-meta">
+            <span style="color: ${badgeColor}; font-weight: 700;">#${t.index}</span>
+            <span>•</span>
+            <span class="token-chip-id">ID: ${t.id}</span>
+          </div>
+        `;
+
+        chip.addEventListener("click", () => {
+          selectToken(t.index);
+        });
+
+        container.appendChild(chip);
+      });
+    }
+
+    /* ==========================================================================
+       Section 6: Render Token ID Table
+       ========================================================================== */
+    function renderTokenIdTable() {
+      const tbody = document.getElementById("token-table-body");
+      tbody.innerHTML = "";
+
+      if (State.tokens.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-light); padding: 32px;">
+              No token data available yet. Please tokenize some text first.
+            </td>
+          </tr>
+        `;
+        document.getElementById("vocab-unique-badge").textContent = `0 Unique Tokens`;
+        document.getElementById("vocab-total-badge").textContent = `0 Total Tokens`;
+        return;
+      }
+
+      // Calculate frequency of each token in current text
+      const freqMap = {};
+      State.tokens.forEach(t => {
+        const key = t.text.toLowerCase();
+        freqMap[key] = (freqMap[key] || 0) + 1;
+      });
+
+      const uniqueCount = Object.keys(freqMap).length;
+      document.getElementById("vocab-unique-badge").textContent = `${uniqueCount} Unique Tokens`;
+      document.getElementById("vocab-total-badge").textContent = `${State.tokens.length} Total Tokens`;
+
+      State.tokens.forEach((t) => {
+        const tr = document.createElement("tr");
+        tr.id = `row-token-${t.index}`;
+        if (State.selectedTokenIndex === t.index) tr.classList.add("highlighted");
+
+        const occurrences = freqMap[t.text.toLowerCase()];
+
+        tr.innerHTML = `
+          <td style="font-family: var(--font-mono); font-weight: 600; color: var(--text-secondary);">${t.index}</td>
+          <td><span class="token-text-badge">${escapeHtml(t.text)}</span></td>
+          <td><span class="token-id-num">${t.id}</span></td>
+          <td><span class="badge ${t.type === 'Punctuation' ? 'badge-purple' : t.type === 'Number' ? 'badge-cyan' : 'badge-primary'}">${t.type}</span></td>
+          <td>
+            <span style="font-weight: 600; font-family: var(--font-mono);">${occurrences} ${occurrences > 1 ? 'times' : 'time'}</span>
+          </td>
+          <td>
+            <span style="color: var(--emerald); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+              ✓ Fixed Vocabulary Match
+            </span>
+          </td>
+        `;
+
+        tr.style.cursor = "pointer";
+        tr.addEventListener("click", () => {
+          selectToken(t.index);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ==========================================================================
+       Section 7: Render Embedding Cards
+       ========================================================================== */
+    function renderEmbeddingCards() {
+      const container = document.getElementById("embedding-cards-container");
+      container.innerHTML = "";
+
+      if (State.tokens.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <i data-lucide="layers" style="width: 32px; height: 32px;"></i>
+            <p>Tokenize text to generate and inspect educational embedding vectors.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      State.tokens.forEach((t) => {
+        const card = document.createElement("div");
+        card.className = `embedding-card ${State.selectedTokenIndex === t.index ? "selected" : ""}`;
+        card.id = `card-embed-${t.index}`;
+
+        const [d1, d2, d3, d4] = t.vector;
+
+        // Convert [-1, 1] range to percentage [0, 100] for visual bar
+        const p1 = Math.round(((d1 + 1) / 2) * 100);
+        const p2 = Math.round(((d2 + 1) / 2) * 100);
+        const p3 = Math.round(((d3 + 1) / 2) * 100);
+        const p4 = Math.round(((d4 + 1) / 2) * 100);
+
+        card.innerHTML = `
+          <div class="embedding-card-header">
+            <div>
+              <span class="token-text-badge">${escapeHtml(t.text)}</span>
+              <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 6px;">#${t.index}</span>
+            </div>
+            <span class="token-id-num">ID ${t.id}</span>
+          </div>
+
+          <div class="embedding-vector-preview">
+            [${d1.toFixed(2)}, ${d2.toFixed(2)}, ${d3.toFixed(2)}, ${d4.toFixed(2)}]
+          </div>
+
+          <div class="vector-bars">
+            <div class="dim-row">
+              <span class="dim-label">Dim 1</span>
+              <div class="dim-bar-track">
+                <div class="dim-bar-fill" style="width: ${p1}%; background: #6366F1;"></div>
+              </div>
+              <span class="dim-val">${d1.toFixed(2)}</span>
+            </div>
+            <div class="dim-row">
+              <span class="dim-label">Dim 2</span>
+              <div class="dim-bar-track">
+                <div class="dim-bar-fill" style="width: ${p2}%; background: #8B5CF6;"></div>
+              </div>
+              <span class="dim-val">${d2.toFixed(2)}</span>
+            </div>
+            <div class="dim-row">
+              <span class="dim-label">Dim 3</span>
+              <div class="dim-bar-track">
+                <div class="dim-bar-fill" style="width: ${p3}%; background: #06B6D4;"></div>
+              </div>
+              <span class="dim-val">${d3.toFixed(2)}</span>
+            </div>
+            <div class="dim-row">
+              <span class="dim-label">Dim 4</span>
+              <div class="dim-bar-track">
+                <div class="dim-bar-fill" style="width: ${p4}%; background: #F59E0B;"></div>
+              </div>
+              <span class="dim-val">${d4.toFixed(2)}</span>
+            </div>
+          </div>
+        `;
+
+        card.addEventListener("click", () => {
+          selectToken(t.index);
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    /* ==========================================================================
+       Cross-Section Selection Sync
+       ========================================================================== */
+    function selectToken(tokenIndex) {
+      if (tokenIndex < 0 || tokenIndex >= State.tokens.length) return;
+      State.selectedTokenIndex = tokenIndex;
+      const t = State.tokens[tokenIndex];
+
+      // Update chips highlight
+      document.querySelectorAll(".token-chip").forEach(el => el.classList.remove("selected"));
+      const activeChip = document.getElementById(`chip-token-${tokenIndex}`);
+      if (activeChip) activeChip.classList.add("selected");
+
+      // Update table highlight & scroll
+      document.querySelectorAll("#token-table-body tr").forEach(el => el.classList.remove("highlighted"));
+      const activeRow = document.getElementById(`row-token-${tokenIndex}`);
+      if (activeRow) {
+        activeRow.classList.add("highlighted");
+        activeRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // Update embedding card highlight
+      document.querySelectorAll(".embedding-card").forEach(el => el.classList.remove("selected"));
+      const activeCard = document.getElementById(`card-embed-${tokenIndex}`);
+      if (activeCard) {
+        activeCard.classList.add("selected");
+        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // Highlight in 3D Three.js space & open inspector
+      highlight3DPoint(tokenIndex);
+
+      // Open inspector card
+      showInspector(t);
+    }
+
+    function showInspector(tokenObj) {
+      const card = document.getElementById("inspector-card");
+      document.getElementById("inspector-token-name").textContent = `"${tokenObj.text}"`;
+      document.getElementById("inspector-token-id").textContent = `#${tokenObj.id}`;
+      document.getElementById("inspector-type-badge").textContent = tokenObj.type;
+
+      const [d1, d2, d3, d4] = tokenObj.vector;
+      document.getElementById("inspector-coord-x").textContent = (d1 * 10).toFixed(2);
+      document.getElementById("inspector-coord-y").textContent = (d2 * 10).toFixed(2);
+      document.getElementById("inspector-coord-z").textContent = (d3 * 10).toFixed(2);
+      document.getElementById("inspector-vector-text").textContent = `[${d1.toFixed(2)}, ${d2.toFixed(2)}, ${d3.toFixed(2)}, ${d4.toFixed(2)}]`;
+
+      card.classList.add("active");
+    }
+
+    function closeInspector() {
+      document.getElementById("inspector-card").classList.remove("active");
+    }
+
+    /* ==========================================================================
+       Section 8: Interactive 3D Embedding Workspace (Three.js Implementation)
+       ========================================================================== */
+    let scene, camera, renderer, controls;
+    let pointMeshes = [];
+    let textSprites = [];
+    let stemLines = [];
+    let gridHelper, axesHelper;
+    let raycaster, mouse;
+    let threeAnimationId = null;
+
+    function initThreeJS() {
+      const container = document.getElementById("canvas-container");
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // 1. Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x080C16);
+      scene.fog = new THREE.FogExp2(0x080C16, 0.025);
+
+      // 2. Camera
+      camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+      camera.position.set(16, 14, 22);
+
+      // 3. Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+
+      const threeCanvas = document.getElementById("three-canvas");
+      threeCanvas.innerHTML = "";
+      threeCanvas.appendChild(renderer.domElement);
+
+      // 4. OrbitControls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxDistance = 60;
+      controls.minDistance = 4;
+      controls.autoRotate = State.autoRotate;
+      controls.autoRotateSpeed = 1.0;
+
+      // 5. Lighting
+      const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0x8B5CF6, 1.2);
+      dirLight1.position.set(20, 30, 20);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0x06B6D4, 0.9);
+      dirLight2.position.set(-20, -20, -20);
+      scene.add(dirLight2);
+
+      // 6. Grid & Coordinate Axes
+      gridHelper = new THREE.GridHelper(30, 30, 0x6366F1, 0x1E293B);
+      gridHelper.position.y = -10;
+      scene.add(gridHelper);
+
+      // 3D Coordinate Axes with Labels (X: Indigo/Red, Y: Cyan/Green, Z: Purple/Blue)
+      axesHelper = new THREE.AxesHelper(12);
+      axesHelper.position.set(0, -10, 0);
+      scene.add(axesHelper);
+
+      const labelX = createTextSprite("X: Dim 1", "#818CF8", "rgba(30, 41, 59, 0.85)");
+      labelX.position.set(13, -10, 0);
+      labelX.scale.set(3.5, 1.1, 1);
+      scene.add(labelX);
+
+      const labelY = createTextSprite("Y: Dim 2", "#34D399", "rgba(30, 41, 59, 0.85)");
+      labelY.position.set(0, 3, 0);
+      labelY.scale.set(3.5, 1.1, 1);
+      scene.add(labelY);
+
+      const labelZ = createTextSprite("Z: Dim 3", "#38BDF8", "rgba(30, 41, 59, 0.85)");
+      labelZ.position.set(0, -10, 13);
+      labelZ.scale.set(3.5, 1.1, 1);
+      scene.add(labelZ);
+
+      // Subtle center origin sphere
+      const originGeo = new THREE.SphereGeometry(0.35, 16, 16);
+      const originMat = new THREE.MeshBasicMaterial({ color: 0x475569, wireframe: true });
+      const originMesh = new THREE.Mesh(originGeo, originMat);
+      scene.add(originMesh);
+
+      // 7. Raycasting for Clicking & Hovering
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      renderer.domElement.addEventListener("pointerdown", onThreePointerDown);
+      window.addEventListener("resize", onWindowResize);
+
+      // Start animation loop
+      animateThree();
+    }
+
+    function animateThree() {
+      threeAnimationId = requestAnimationFrame(animateThree);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById("canvas-container");
+      if (!container || !renderer || !camera) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    // Helper: Canvas-based Crisp Text Sprite for 3D Labels
+    function createTextSprite(text, colorStr = "#FFFFFF", bgColor = "rgba(15, 23, 42, 0.75)") {
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 80;
+      const ctx = canvas.getContext("2d");
+
+      // Background rounded pill
+      ctx.fillStyle = bgColor;
+      roundRect(ctx, 10, 10, 236, 60, 20, true, true);
+
+      // Text
+      ctx.fillStyle = colorStr;
+      ctx.font = "bold 26px 'Plus Jakarta Sans', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, 128, 40);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(3.2, 1.0, 1.0);
+      return sprite;
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) {
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    // Update 3D points from current tokens
+    function update3DVisualization() {
+      if (!scene) return;
+
+      // Clear existing points, labels, and stems
+      clear3DVisualObjects();
+
+      document.getElementById("space-token-count-badge").textContent = `${State.tokens.length} Points Plotted`;
+
+      if (State.tokens.length === 0) return;
+
+      const scaleFactor = 10.0; // Scale educational [-1, 1] to [-10, 10] coordinates
+
+      State.tokens.forEach((t) => {
+        const [d1, d2, d3] = t.vector;
+        const x = d1 * scaleFactor;
+        const y = d2 * scaleFactor;
+        const z = d3 * scaleFactor;
+
+        // Color coding by type
+        let hexColor = 0x6366F1; // Word -> Indigo
+        let cssColor = "#6366F1";
+        if (t.type === "Punctuation") {
+          hexColor = 0xF59E0B;
+          cssColor = "#F59E0B";
+        } else if (t.type === "Number") {
+          hexColor = 0x10B981;
+          cssColor = "#10B981";
+        } else if (t.type === "Entity / Proper") {
+          hexColor = 0x06B6D4;
+          cssColor = "#06B6D4";
+        }
+
+        // 1. Sphere Mesh for Token Node
+        const geometry = new THREE.SphereGeometry(0.55, 32, 32);
+        const material = new THREE.MeshStandardMaterial({
+          color: hexColor,
+          emissive: hexColor,
+          emissiveIntensity: 0.45,
+          roughness: 0.2,
+          metalness: 0.6,
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(x, y, z);
+        mesh.userData = { tokenIndex: t.index, tokenData: t };
+        scene.add(mesh);
+        pointMeshes.push(mesh);
+
+        // 2. Glowing Halo Ring around Sphere
+        const haloGeo = new THREE.RingGeometry(0.7, 0.85, 32);
+        const haloMat = new THREE.MeshBasicMaterial({
+          color: hexColor,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.65,
+        });
+        const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+        haloMesh.position.set(x, y, z);
+        haloMesh.lookAt(camera.position);
+        haloMesh.userData = { tokenIndex: t.index, tokenData: t };
+        scene.add(haloMesh);
+        pointMeshes.push(haloMesh);
+
+        // 3. Floating Text Sprite
+        const sprite = createTextSprite(t.text, "#FFFFFF", "rgba(15, 23, 42, 0.85)");
+        sprite.position.set(x, y + 1.2, z);
+        sprite.userData = { tokenIndex: t.index, tokenData: t };
+        scene.add(sprite);
+        pointMeshes.push(sprite);
+        textSprites.push(sprite);
+
+        // 4. Subtle projection line to floor grid for depth perception
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x, y, z),
+          new THREE.Vector3(x, -10, z)
+        ]);
+        const lineMat = new THREE.LineDashedMaterial({
+          color: hexColor,
+          dashSize: 0.4,
+          gapSize: 0.3,
+          transparent: true,
+          opacity: 0.25,
+        });
+        const line = new THREE.Line(lineGeo, lineMat);
+        line.computeLineDistances();
+        scene.add(line);
+        stemLines.push(line);
+      });
+    }
+
+    function clear3DVisualObjects() {
+      pointMeshes.forEach(mesh => scene.remove(mesh));
+      pointMeshes = [];
+      textSprites.forEach(sprite => scene.remove(sprite));
+      textSprites = [];
+      stemLines.forEach(line => scene.remove(line));
+      stemLines = [];
+    }
+
+    function clear3DSpace() {
+      clear3DVisualObjects();
+      document.getElementById("space-token-count-badge").textContent = `0 Points Plotted`;
+      closeInspector();
+    }
+
+    function highlight3DPoint(tokenIndex) {
+      pointMeshes.forEach(mesh => {
+        if (mesh.userData && mesh.userData.tokenIndex !== undefined) {
+          if (mesh.userData.tokenIndex === tokenIndex) {
+            mesh.scale.set(1.5, 1.5, 1.5);
+            if (mesh.material && mesh.material.emissiveIntensity) {
+              mesh.material.emissiveIntensity = 1.0;
+            }
+          } else {
+            mesh.scale.set(1.0, 1.0, 1.0);
+            if (mesh.material && mesh.material.emissiveIntensity) {
+              mesh.material.emissiveIntensity = 0.4;
+            }
+          }
+        }
+      });
+    }
+
+    function onThreePointerDown(event) {
+      const container = document.getElementById("canvas-container");
+      const rect = container.getBoundingClientRect();
+
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(pointMeshes);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        if (hit.userData && hit.userData.tokenIndex !== undefined) {
+          selectToken(hit.userData.tokenIndex);
+        }
+      }
+    }
+
+    function toggleAutoRotate() {
+      State.autoRotate = !State.autoRotate;
+      controls.autoRotate = State.autoRotate;
+      const btnText = document.getElementById("rotate-btn-text");
+      btnText.textContent = State.autoRotate ? "Pause Rotation" : "Resume Rotation";
+    }
+
+    function reset3DCamera() {
+      camera.position.set(16, 14, 22);
+      camera.lookAt(0, 0, 0);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    /* ==========================================================================
+       Section 9: 2D Embedding Visualization (Chart.js)
+       ========================================================================== */
+    let scatterChart = null;
+
+    function init2DChart() {
+      const ctx = document.getElementById("scatterChart").getContext("2d");
+
+      scatterChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Tokens (Dim 1 vs Dim 2)',
+            data: [],
+            backgroundColor: '#6366F1',
+            borderColor: '#4F46E5',
+            pointRadius: 8,
+            pointHoverRadius: 12,
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const raw = context.raw;
+                  return `Token: "${raw.tokenText}" (ID: ${raw.tokenId}) -> [X: ${raw.x}, Y: ${raw.y}]`;
+                }
+              }
+            },
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Dimension 1 (Lexical Complexity / Length)',
+                font: { family: 'Plus Jakarta Sans', weight: 'bold', size: 12 }
+              },
+              min: -1.2,
+              max: 1.2,
+              grid: { color: 'rgba(226, 232, 240, 0.6)' }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Dimension 2 (Syntactic / Character Distribution)',
+                font: { family: 'Plus Jakarta Sans', weight: 'bold', size: 12 }
+              },
+              min: -1.2,
+              max: 1.2,
+              grid: { color: 'rgba(226, 232, 240, 0.6)' }
+            }
+          }
+        }
+      });
+    }
+
+    function update2DChart() {
+      if (!scatterChart) return;
+
+      const chartData = State.tokens.map(t => {
+        const [d1, d2] = t.vector;
+        return {
+          x: d1,
+          y: d2,
+          tokenText: t.text,
+          tokenId: t.id,
+          tokenIndex: t.index,
+        };
+      });
+
+      // Point background colors matched with token types
+      const colors = State.tokens.map(t => {
+        if (t.type === "Punctuation") return '#F59E0B';
+        if (t.type === "Number") return '#10B981';
+        if (t.type === "Entity / Proper") return '#06B6D4';
+        return '#6366F1';
+      });
+
+      scatterChart.data.datasets[0].data = chartData;
+      scatterChart.data.datasets[0].backgroundColor = colors;
+      scatterChart.update();
+    }
+
+    /* ==========================================================================
+       Hero Text Typewriter Demo Animation
+       ========================================================================== */
+    function initHeroDemo() {
+      const demoTokens = ["Language", "models", "understand", "numbers", ",", "not", "words", "."];
+      const pillsContainer = document.getElementById("hero-token-pills");
+      pillsContainer.innerHTML = "";
+
+      demoTokens.forEach((tok, idx) => {
+        const pill = document.createElement("span");
+        pill.style.cssText = `
+          display: inline-block;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-family: var(--font-mono);
+          font-size: 0.75rem;
+          font-weight: 700;
+          background: #FFFFFF;
+          border: 1px solid rgba(99, 102, 241, 0.25);
+          color: var(--primary);
+        `;
+        pill.textContent = tok;
+        pillsContainer.appendChild(pill);
+      });
+    }
+
+    /* ==========================================================================
+       Utility Helpers
+       ========================================================================== */
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+      const navLinks = document.querySelector('.nav-links');
+      if (navLinks) {
+        navLinks.classList.remove('mobile-open');
+      }
+    }
+
+    function toggleMobileMenu() {
+      const navLinks = document.querySelector('.nav-links');
+      if (navLinks) {
+        navLinks.classList.toggle('mobile-open');
+      }
+    }
+
+    // Active Navigation link on scroll
+    window.addEventListener('scroll', () => {
+      const sections = ['home', 'tokenizer', 'token-ids', 'embeddings', 'workspace3d', 'plot2d', 'how-it-works'];
+      const scrollPos = window.scrollY + 100;
+
+      sections.forEach(secId => {
+        const sec = document.getElementById(secId);
+        const navLink = document.querySelector(`.nav-link[href="#${secId}"]`);
+        if (sec && navLink) {
+          const top = sec.offsetTop;
+          const height = sec.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            navLink.classList.add('active');
+          }
+        }
+      });
+    });
+
+    /* ==========================================================================
+       Initial Bootstrapping
+       ========================================================================== */
+    window.addEventListener("DOMContentLoaded", () => {
+      // Initialize icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      // Initialize 3D Engine
+      initThreeJS();
+
+      // Initialize 2D Scatter Plot
+      init2DChart();
+
+      // Initialize Hero live demo
+      initHeroDemo();
+
+      // Load initial default sample sentence
+      loadSample(1);
+    });
+  </script>
+</body>
+</html>
+
